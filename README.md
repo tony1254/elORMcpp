@@ -21,20 +21,18 @@ Este proyecto es una librería en C++ inspirada en el ORM Eloquent de Laravel. S
    ```bash
    git clone https://github.com/tu_usuario/mysql-eloquent-orm-cpp.git
 
-Incluir los archivos en tu proyecto:
+## Incluir los archivos en tu proyecto:
 
 Copia los archivos MySQLConexion.h y MySQLModel.h en el directorio de tu proyecto.
 
-Configurar la compilación:
+## Configurar la compilación:
 
 Al compilar tu proyecto, asegúrate de incluir el directorio de los headers y enlazar la biblioteca de MySQL. Por ejemplo, con g++:
+    ```bash
+    g++ -std=c++11 -I/path/to/headers -o mi_proyecto main.cpp -lmysqlclient
 
-bash
-Copiar
-Editar
-g++ -std=c++11 -I/path/to/headers -o mi_proyecto main.cpp -lmysqlclient
-Uso
-1. Conexión a la Base de Datos
+## Uso
+1.** Conexión a la Base de Datos
 Crea una instancia de MySQLConexion y abre la conexión:
 
 cpp

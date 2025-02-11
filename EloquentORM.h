@@ -15,7 +15,7 @@ using namespace std;
 /**
  * @brief Clase que representa un modelo genérico al estilo Eloquent para MySQL.
  *
- * Permite realizar operaciones CRUD y aplicar condiciones (WHERE) de forma sencilla.
+ * Permite realizar operaciones CRUD y aplicar condiciones (WHERE) de forma sencilla, además de aceptar consultas personalizadas mediante raw().
  */
 class EloquentORM {
 private:
@@ -24,13 +24,14 @@ private:
     vector<string> columns;              // Lista de columnas (orden definida)
     map<string, string> attributes;      // Atributos: par campo-valor
     MYSQL *conn;
-    string condition;                    // Almacena la condición WHERE para las consultas
+    string condition;                    // Condición WHERE construida con where()
+    string rawQuery;                     // Consulta raw personalizada (si se establece)
 
     /**
      * @brief Función auxiliar para ejecutar una consulta SQL.
      *
      * @param query La consulta a ejecutar.
-     * @return MYSQL_RES* Resultado de la consulta o nullptr si ocurre error.
+     * @return MYSQL_RES* Resultado de la consulta o nullptr en caso de error.
      */
     MYSQL_RES* execute(const string &query) {
         if(mysql_query(conn, query.c_str())){
@@ -48,7 +49,7 @@ public:
      * @param cols Vector de nombres de columnas.
      */
     EloquentORM(MySQLConexion &connection, const string &tableName, const vector<string> &cols)
-         : db(connection), table(tableName), columns(cols), condition("") {
+         : db(connection), table(tableName), columns(cols), condition(""), rawQuery("") {
          conn = db.getConnection();
          // Inicializar atributos con cadena vacía para cada columna.
          for(auto &col: columns)
@@ -92,7 +93,6 @@ public:
          if(res) {
               MYSQL_ROW row = mysql_fetch_row(res);
               if(row) {
-                   // Se obtienen los nombres reales de las columnas.
                    unsigned int num_fields = mysql_num_fields(res);
                    MYSQL_FIELD *fields = mysql_fetch_fields(res);
                    for(unsigned int i = 0; i < num_fields; i++) {
@@ -205,7 +205,7 @@ public:
      */
     EloquentORM where(const string &field, const string &value) {
          EloquentORM newORM = *this; // Copia del objeto actual
-         string newCond = field + " = '" + value + "'";
+         string newCond = field + " LIKE '%" + value + "%'";
          if(!newORM.condition.empty()){
               newORM.condition += " AND " + newCond;
          } else {
@@ -215,15 +215,34 @@ public:
     }
     
     /**
-     * @brief Obtiene todos los registros que cumplan la condición (o todos si no hay condición).
+     * @brief Permite asignar una consulta raw personalizada.
      *
-     * @return vector< map<string, string> > Vector de registros, donde cada registro es un mapa campo-valor.
+     * Al usar este método, se ignoran las condiciones previamente establecidas.
+     *
+     * @param query Consulta SQL completa.
+     * @return EloquentORM Objeto con la consulta raw asignada.
+     */
+    EloquentORM raw(const string &query) {
+         EloquentORM newORM = *this;
+         newORM.rawQuery = query;
+         return newORM;
+    }
+    
+    /**
+     * @brief Obtiene todos los registros que cumplan la condición o, si se usó raw(), la consulta personalizada.
+     *
+     * @return vector< map<string, string> > Vector de registros (cada registro es un mapa campo-valor).
      */
     vector< map<string, string> > getAll() {
          vector< map<string, string> > rows;
-         string query = "SELECT * FROM " + table;
-         if(!condition.empty()){
-              query += " WHERE " + condition;
+         string query;
+         if(!rawQuery.empty()){
+              query = rawQuery;
+         } else {
+              query = "SELECT * FROM " + table;
+              if(!condition.empty()){
+                   query += " WHERE " + condition;
+              }
          }
          MYSQL_RES *res = execute(query);
          if(res){
@@ -243,15 +262,20 @@ public:
     }
     
     /**
-     * @brief Obtiene el primer registro que cumpla la condición.
+     * @brief Obtiene el primer registro que cumpla la condición o de la consulta raw.
      *
      * @return map<string, string> Mapa con los campos y valores del primer registro encontrado.
      */
     map<string, string> first() {
          map<string, string> record;
-         string query = "SELECT * FROM " + table;
-         if(!condition.empty()){
-              query += " WHERE " + condition;
+         string query;
+         if(!rawQuery.empty()){
+              query = rawQuery;
+         } else {
+              query = "SELECT * FROM " + table;
+              if(!condition.empty()){
+                   query += " WHERE " + condition;
+              }
          }
          query += " LIMIT 1";
          MYSQL_RES *res = execute(query);

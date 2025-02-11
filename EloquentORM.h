@@ -8,14 +8,14 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <mysql/mysql.h>
 
 using namespace std;
 
 /**
- * @brief Clase que representa un modelo genérico al estilo Eloquent.
+ * @brief Clase que representa un modelo genérico al estilo Eloquent para MySQL.
  *
- * Permite definir una tabla y sus columnas para realizar operaciones CRUD (crear, leer, actualizar y eliminar)
- * sin depender de una implementación específica de modelo (se adapta a cualquier tabla).
+ * Permite realizar operaciones CRUD y aplicar condiciones (WHERE) de forma sencilla.
  */
 class EloquentORM {
 private:
@@ -24,9 +24,13 @@ private:
     vector<string> columns;              // Lista de columnas (orden definida)
     map<string, string> attributes;      // Atributos: par campo-valor
     MYSQL *conn;
-    
+    string condition;                    // Almacena la condición WHERE para las consultas
+
     /**
-     * @brief Función auxiliar para ejecutar una consulta y obtener el resultado.
+     * @brief Función auxiliar para ejecutar una consulta SQL.
+     *
+     * @param query La consulta a ejecutar.
+     * @return MYSQL_RES* Resultado de la consulta o nullptr si ocurre error.
      */
     MYSQL_RES* execute(const string &query) {
         if(mysql_query(conn, query.c_str())){
@@ -38,42 +42,49 @@ private:
 public:
     /**
      * @brief Constructor.
-     * 
+     *
      * @param connection Referencia a la conexión MySQL.
      * @param tableName Nombre de la tabla.
      * @param cols Vector de nombres de columnas.
      */
     EloquentORM(MySQLConexion &connection, const string &tableName, const vector<string> &cols)
-         : db(connection), table(tableName), columns(cols) {
+         : db(connection), table(tableName), columns(cols), condition("") {
          conn = db.getConnection();
-         // Inicializar atributos con cadena vacía.
+         // Inicializar atributos con cadena vacía para cada columna.
          for(auto &col: columns)
              attributes[col] = "";
     }
     
     /**
      * @brief Asigna un valor a un campo.
+     *
+     * @param field Nombre del campo.
+     * @param value Valor a asignar.
      */
     void set(const string &field, const string &value) {
          attributes[field] = value;
-      //   if(find(columns.begin(), columns.end(), field) == columns.end()) {
-          if(std::find(columns.begin(), columns.end(), field) == columns.end()) {
+         // Si el campo no existe en el vector de columnas, se añade.
+         if(std::find(columns.begin(), columns.end(), field) == columns.end()) {
              columns.push_back(field);
          }
     }
     
     /**
      * @brief Obtiene el valor de un campo.
+     *
+     * @param field Nombre del campo.
+     * @return string Valor del campo.
      */
     string get(const string &field) {
          return attributes[field];
     }
     
     /**
-     * @brief Busca un registro por 'id' y carga sus atributos.
-     * 
-     * @param id Valor del campo 'id'.
-     * @return true si se encontró el registro; false de lo contrario.
+     * @brief Busca un registro por el campo 'id' y carga sus atributos.
+     *
+     * @param id Valor del 'id' a buscar.
+     * @return true Si se encontró el registro.
+     * @return false Si no se encontró.
      */
     bool find(int id) {
          string query = "SELECT * FROM " + table + " WHERE id = " + to_string(id) + " LIMIT 1";
@@ -81,8 +92,11 @@ public:
          if(res) {
               MYSQL_ROW row = mysql_fetch_row(res);
               if(row) {
-                   for(size_t i = 0; i < columns.size(); i++) {
-                        attributes[columns[i]] = (row[i] ? row[i] : "");
+                   // Se obtienen los nombres reales de las columnas.
+                   unsigned int num_fields = mysql_num_fields(res);
+                   MYSQL_FIELD *fields = mysql_fetch_fields(res);
+                   for(unsigned int i = 0; i < num_fields; i++) {
+                        attributes[string(fields[i].name)] = (row[i] ? row[i] : "");
                    }
                    mysql_free_result(res);
                    return true;
@@ -93,7 +107,10 @@ public:
     }
     
     /**
-     * @brief Guarda el registro: crea uno nuevo si 'id' no está definido, o actualiza el existente.
+     * @brief Guarda el registro: crea uno nuevo si 'id' no está definido o actualiza el existente.
+     *
+     * @return true Si la operación fue exitosa.
+     * @return false En caso de error.
      */
     bool save() {
          if(attributes.find("id") == attributes.end() || attributes["id"].empty())
@@ -104,6 +121,9 @@ public:
     
     /**
      * @brief Inserta un nuevo registro en la tabla.
+     *
+     * @return true Si la inserción fue exitosa.
+     * @return false En caso de error.
      */
     bool create() {
          stringstream ss;
@@ -128,6 +148,9 @@ public:
     
     /**
      * @brief Actualiza el registro actual (requiere que 'id' esté definido).
+     *
+     * @return true Si la actualización fue exitosa.
+     * @return false En caso de error.
      */
     bool update() {
          if(attributes.find("id") == attributes.end() || attributes["id"].empty()){
@@ -154,6 +177,9 @@ public:
     
     /**
      * @brief Elimina el registro actual (requiere que 'id' esté definido).
+     *
+     * @return true Si la eliminación fue exitosa.
+     * @return false En caso de error.
      */
     bool remove() {
          if(attributes.find("id") == attributes.end() || attributes["id"].empty()){
@@ -169,30 +195,79 @@ public:
     }
     
     /**
-     * @brief Obtiene todos los registros de la tabla.
-     * 
-     * @return vector<map<string, string>> Vector de registros (cada registro es un mapa campo-valor).
+     * @brief Aplica una condición WHERE para filtrar registros.
+     *
+     * Permite encadenar condiciones. Retorna una copia del objeto con la condición actualizada.
+     *
+     * @param field Nombre del campo.
+     * @param value Valor a comparar.
+     * @return EloquentORM Objeto con la condición aplicada.
+     */
+    EloquentORM where(const string &field, const string &value) {
+         EloquentORM newORM = *this; // Copia del objeto actual
+         string newCond = field + " = '" + value + "'";
+         if(!newORM.condition.empty()){
+              newORM.condition += " AND " + newCond;
+         } else {
+              newORM.condition = newCond;
+         }
+         return newORM;
+    }
+    
+    /**
+     * @brief Obtiene todos los registros que cumplan la condición (o todos si no hay condición).
+     *
+     * @return vector< map<string, string> > Vector de registros, donde cada registro es un mapa campo-valor.
      */
     vector< map<string, string> > getAll() {
-     vector< map<string, string> > rows;
-     string query = "SELECT * FROM " + table;
-     MYSQL_RES *res = execute(query);
-     if (res) {
-         MYSQL_ROW row;
-         unsigned int num_fields = mysql_num_fields(res);
-         MYSQL_FIELD *fields = mysql_fetch_fields(res);
-         while ((row = mysql_fetch_row(res))) {
-             map<string, string> record;
-             for (unsigned int i = 0; i < num_fields; i++) {
-                 // Usamos el nombre real de la columna obtenido de MySQL
-                 record[string(fields[i].name)] = (row[i] ? row[i] : "");
-             }
-             rows.push_back(record);
+         vector< map<string, string> > rows;
+         string query = "SELECT * FROM " + table;
+         if(!condition.empty()){
+              query += " WHERE " + condition;
          }
-         mysql_free_result(res);
-     }
-     return rows;
- }
+         MYSQL_RES *res = execute(query);
+         if(res){
+              MYSQL_ROW row;
+              unsigned int num_fields = mysql_num_fields(res);
+              MYSQL_FIELD *fields = mysql_fetch_fields(res);
+              while((row = mysql_fetch_row(res))){
+                   map<string, string> record;
+                   for(unsigned int i = 0; i < num_fields; i++){
+                        record[string(fields[i].name)] = (row[i] ? row[i] : "");
+                   }
+                   rows.push_back(record);
+              }
+              mysql_free_result(res);
+         }
+         return rows;
+    }
+    
+    /**
+     * @brief Obtiene el primer registro que cumpla la condición.
+     *
+     * @return map<string, string> Mapa con los campos y valores del primer registro encontrado.
+     */
+    map<string, string> first() {
+         map<string, string> record;
+         string query = "SELECT * FROM " + table;
+         if(!condition.empty()){
+              query += " WHERE " + condition;
+         }
+         query += " LIMIT 1";
+         MYSQL_RES *res = execute(query);
+         if(res) {
+              MYSQL_ROW row = mysql_fetch_row(res);
+              if(row){
+                   unsigned int num_fields = mysql_num_fields(res);
+                   MYSQL_FIELD *fields = mysql_fetch_fields(res);
+                   for(unsigned int i = 0; i < num_fields; i++){
+                        record[string(fields[i].name)] = (row[i] ? row[i] : "");
+                   }
+              }
+              mysql_free_result(res);
+         }
+         return record;
+    }
 };
 
 #endif // ELOQUENTORM_H

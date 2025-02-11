@@ -14,8 +14,10 @@ using namespace std;
 /**
  * @brief Clase que representa un modelo genérico al estilo Eloquent.
  *
- * Permite definir una tabla y sus columnas para realizar operaciones CRUD (crear, leer, actualizar y eliminar)
- * sin depender de una implementación específica de modelo (se adapta a cualquier tabla).
+ * Permite definir una tabla y sus columnas para realizar operaciones CRUD
+ * (crear, leer, actualizar y eliminar) de forma sencilla.
+ *
+ * Si se establece el valor de un campo en "--NO_SAVE--" se ignorará ese campo en las operaciones de create() y update().
  */
 class EloquentORM {
 private:
@@ -25,9 +27,7 @@ private:
     map<string, string> attributes;      // Atributos: par campo-valor
     MYSQL *conn;
     
-    /**
-     * @brief Función auxiliar para ejecutar una consulta y obtener el resultado.
-     */
+    // Función auxiliar para ejecutar una consulta y obtener el resultado
     MYSQL_RES* execute(const string &query) {
         if(mysql_query(conn, query.c_str())){
             cerr << "Error en la consulta: " << mysql_error(conn) << endl;
@@ -36,9 +36,12 @@ private:
         return mysql_store_result(conn);
     }
 public:
+    // Valor marcador para indicar que un campo no se quiere guardar.
+    static const string IGNORE_MARKER;
+    
     /**
      * @brief Constructor.
-     * 
+     *
      * @param connection Referencia a la conexión MySQL.
      * @param tableName Nombre de la tabla.
      * @param cols Vector de nombres de columnas.
@@ -71,9 +74,9 @@ public:
     
     /**
      * @brief Busca un registro por 'id' y carga sus atributos.
-     * 
+     *
      * @param id Valor del campo 'id'.
-     * @return true si se encontró el registro; false de lo contrario.
+     * @return true si se encontró el registro; false en caso contrario.
      */
     bool find(int id) {
          string query = "SELECT * FROM " + table + " WHERE id = " + to_string(id) + " LIMIT 1";
@@ -103,19 +106,26 @@ public:
     }
     
     /**
-     * @brief Inserta un nuevo registro en la tabla.
+     * @brief Inserta un nuevo registro en la tabla, ignorando los campos con valor IGNORE_MARKER.
      */
     bool create() {
          stringstream ss;
          ss << "INSERT INTO " << table << " (";
-         for(size_t i = 0; i < columns.size(); i++){
-              ss << columns[i];
-              if(i < columns.size()-1) ss << ", ";
+         // Solo se guardarán los campos cuyo valor no sea IGNORE_MARKER.
+         vector<string> saveColumns;
+         for(auto &col : columns){
+             if(attributes[col] == IGNORE_MARKER)
+                 continue;
+             saveColumns.push_back(col);
+         }
+         for(size_t i = 0; i < saveColumns.size(); i++){
+              ss << saveColumns[i];
+              if(i < saveColumns.size()-1) ss << ", ";
          }
          ss << ") VALUES (";
-         for(size_t i = 0; i < columns.size(); i++){
-              ss << "'" << attributes[columns[i]] << "'";
-              if(i < columns.size()-1) ss << ", ";
+         for(size_t i = 0; i < saveColumns.size(); i++){
+              ss << "'" << attributes[saveColumns[i]] << "'";
+              if(i < saveColumns.size()-1) ss << ", ";
          }
          ss << ")";
          string query = ss.str();
@@ -127,7 +137,7 @@ public:
     }
     
     /**
-     * @brief Actualiza el registro actual (requiere que 'id' esté definido).
+     * @brief Actualiza el registro actual (requiere que 'id' esté definido), ignorando los campos con valor IGNORE_MARKER.
      */
     bool update() {
          if(attributes.find("id") == attributes.end() || attributes["id"].empty()){
@@ -137,9 +147,13 @@ public:
          stringstream ss;
          ss << "UPDATE " << table << " SET ";
          bool first = true;
-         for(auto &col: columns){
-              if(col == "id") continue;
-              if(!first) ss << ", ";
+         for(auto &col : columns) {
+              if(col == "id")
+                  continue;
+              if(attributes[col] == IGNORE_MARKER)
+                  continue;
+              if(!first)
+                   ss << ", ";
               ss << col << " = '" << attributes[col] << "'";
               first = false;
          }
@@ -170,7 +184,7 @@ public:
     
     /**
      * @brief Obtiene todos los registros de la tabla.
-     * 
+     *
      * @return vector<map<string, string>> Vector de registros (cada registro es un mapa campo-valor).
      */
     vector< map<string, string> > getAll() {
@@ -192,5 +206,7 @@ public:
          return rows;
     }
 };
+
+const string EloquentORM::IGNORE_MARKER = "--NO_SAVE--";
 
 #endif // ELOQUENTORM_H

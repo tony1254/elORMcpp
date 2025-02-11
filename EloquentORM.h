@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 using namespace std;
 

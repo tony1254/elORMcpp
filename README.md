@@ -77,7 +77,7 @@ int main() {
     
     // 2. Definir el modelo genérico para la tabla "boletos" con los campos definidos.
     //    (Los campos pueden ser de cualquier tabla, simplemente cambia el nombre de la tabla y los campos según sea necesario)
-    EloquentORM boleto(db, "boletos", {"id", "nombre", "fechaSalida", "fechaLlegada", "asiento", "numeroVuelo"});
+    EloquentORM boleto(db, "boletos", { "nombre", "fechaSalida", "fechaLlegada", "asiento", "numeroVuelo"});
     
     // 3. Crear un nuevo registro.
     boleto.set("nombre", "Juan Perez");

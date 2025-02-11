@@ -174,23 +174,25 @@ public:
      * @return vector<map<string, string>> Vector de registros (cada registro es un mapa campo-valor).
      */
     vector< map<string, string> > getAll() {
-         vector< map<string, string> > rows;
-         string query = "SELECT * FROM " + table;
-         MYSQL_RES *res = execute(query);
-         if(res){
-              MYSQL_ROW row;
-              unsigned int num_fields = mysql_num_fields(res);
-              while((row = mysql_fetch_row(res))){
-                   map<string, string> record;
-                   for(size_t i = 0; i < columns.size() && i < num_fields; i++){
-                        record[columns[i]] = (row[i] ? row[i] : "");
-                   }
-                   rows.push_back(record);
-              }
-              mysql_free_result(res);
+     vector< map<string, string> > rows;
+     string query = "SELECT * FROM " + table;
+     MYSQL_RES *res = execute(query);
+     if (res) {
+         MYSQL_ROW row;
+         unsigned int num_fields = mysql_num_fields(res);
+         MYSQL_FIELD *fields = mysql_fetch_fields(res);
+         while ((row = mysql_fetch_row(res))) {
+             map<string, string> record;
+             for (unsigned int i = 0; i < num_fields; i++) {
+                 // Usamos el nombre real de la columna obtenido de MySQL
+                 record[string(fields[i].name)] = (row[i] ? row[i] : "");
+             }
+             rows.push_back(record);
          }
-         return rows;
-    }
+         mysql_free_result(res);
+     }
+     return rows;
+ }
 };
 
 #endif // ELOQUENTORM_H

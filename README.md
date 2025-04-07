@@ -1,4 +1,4 @@
-# elORMcpp EL ARCHIVO ES EloquentORM.h
+# elORMcpp EL ARCHIVO del Framework EloquentORM.h y MySQLConexion.h.
 MySQL Eloquent-like ORM para C++ mini proyect
 
 # MySQL Eloquent-like ORM para C++

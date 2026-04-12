@@ -122,9 +122,15 @@ Este archivo le dice a VS Code cómo invocar a `g++` e incluir las librerías de
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
+             ////////  
+
                 "-I", "D:/Desarrollo/sdks/mysql-connector/include",
                 "-L", "D:/Desarrollo/sdks/mysql-connector/lib",
                 "-lmysql",
+
+
+             ////////  
+
                 "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
             "options": {
@@ -167,14 +173,6 @@ Para que IntelliSense reconozca los `#include <mysql.h>`, presiona `Ctrl + Shift
     "version": 4
 }
 ```
-```
-
-### Consejos adicionales para tu GitHub:
-1.  **Imágenes:** Si tienes capturas de pantalla de las Variables de Entorno, puedes subirlas a una carpeta `/img` en tu repo y agregarlas con `![Descripción](img/pantallazo.png)`.
-2.  **Emojis:** He mantenido y añadido algunos para que sea más legible para los estudiantes de la UMG.
-3.  **Rutas:** He ajustado las rutas al estándar `D:\Desarrollo` que propusiste, para que sea consistente en toda la guía.
-
-¿Crees que con esto tus alumnos ya no se pierdan con el `libmysql.dll`? Ese suele ser el error #1.
 1. **Descarga o clona el repositorio:**
    ```bash
    git clone https://github.com/tu_usuario/eloquent-orm-cpp.git

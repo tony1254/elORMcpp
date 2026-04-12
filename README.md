@@ -122,13 +122,11 @@ Este archivo le dice a VS Code cómo invocar a `g++` e incluir las librerías de
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
-             ////////  
 
+             ////////  
                 "-I", "D:/Desarrollo/sdks/mysql-connector/include",
                 "-L", "D:/Desarrollo/sdks/mysql-connector/lib",
                 "-lmysql",
-
-
              ////////  
 
                 "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe"
@@ -156,7 +154,11 @@ Para que IntelliSense reconozca los `#include <mysql.h>`, presiona `Ctrl + Shift
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+
+            ////////  
                 "D:/Desarrollo/sdks/mysql-connector/include"
+             ////////  
+
             ],
             "defines": [
                 "_DEBUG",

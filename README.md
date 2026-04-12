@@ -59,7 +59,13 @@ He corregido las rutas para que coincidan con la estructura que sugeriste (usand
 
 Para compilar en C++, utilizaremos **MinGW-w64** a través de WinLibs.
 
-1.  **Descarga:** Ve a [winlibs.com](https://winlibs.com/) y descarga la versión comprimida (ZIP) adecuada para tu sistema.
+1.  **Descarga:** Ve a
+
+             ////////  
+ [winlibs.com](https://winlibs.com/)
+[MySQL Product Archives](https://downloads.mysql.com/archives/c-c/)
+
+y descarga la versión comprimida (ZIP) adecuada para tu sistema.
 2.  **Descomprimir:** Extrae el contenido en una ruta sencilla, preferiblemente `D:\Desarrollo\mingw64`.
 3.  **Configurar el PATH:**
     * Ve a **Propiedades del sistema** > **Configuración avanzada** > **Variables de entorno**.
@@ -85,7 +91,14 @@ Para compilar en C++, utilizaremos **MinGW-w64** a través de WinLibs.
 
 Para evitar instalaciones pesadas, usaremos el SDK directo.
 
-* **Acción:** Descarga el ZIP de **MySQL Connector/C 6.1.11** para Windows x64 desde los [MySQL Product Archives](https://downloads.mysql.com/archives/c-c/).
+* **Acción:** Descarga el ZIP de **MySQL Connector/C 6.1.11** para Windows x64 desde los
+
+
+             ////////  
+[MySQL Product Archives]
+(https://downloads.mysql.com/archives/c-c/).
+
+
 * **Extracción:** Descomprímelo en una carpeta dedicada a SDKs.
 
 #### 📂 Estructura recomendada de carpetas:

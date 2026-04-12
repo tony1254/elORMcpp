@@ -37,7 +37,144 @@ A continuación se muestra un ejemplo completo de documentación en formato Mark
 ---
 
 ## Instalación
+¡Claro que sí, Ingeniero! He organizado toda la información en formato **Markdown**, que es el lenguaje que usa GitHub para los archivos `README.md`. 
 
+He corregido las rutas para que coincidan con la estructura que sugeriste (usando carpetas de SDKs) y he aplicado los bloques de código adecuados para que tus alumnos solo tengan que copiar y pegar.
+
+---
+
+```markdown
+## 2️⃣ Herramientas de Desarrollo
+
+### 2.1 Editores y Entornos de Desarrollo 🛠️
+
+* **Editores:** Visual Studio Code, Code::Blocks, Dev-C++, CLion, Eclipse CDT.
+* **Compiladores:** MinGW, GNU GCC, Clang, Microsoft C++ Compiler.
+
+> **💡 Actividad:** Instalar y configurar un entorno de desarrollo, escribir y compilar un programa simple (por ejemplo, el "Hola Mundo").
+
+---
+
+### 📦 Paso 1: Instalar el Compilador (MinGW-w64)
+
+Para compilar en C++, utilizaremos **MinGW-w64** a través de WinLibs.
+
+1.  **Descarga:** Ve a [winlibs.com](https://winlibs.com/) y descarga la versión comprimida (ZIP) adecuada para tu sistema.
+2.  **Descomprimir:** Extrae el contenido en una ruta sencilla, preferiblemente `D:\Desarrollo\mingw64`.
+3.  **Configurar el PATH:**
+    * Ve a **Propiedades del sistema** > **Configuración avanzada** > **Variables de entorno**.
+    * En "Variables del sistema", busca la variable `Path` y selecciona **Editar**.
+    * Agrega la ruta de la carpeta `bin` del compilador: `D:\Desarrollo\mingw64\bin`.
+    * *Esto permite que el comando `g++` sea reconocido en cualquier terminal.*
+
+---
+
+### ⚙️ Paso 2: Configuración de Visual Studio Code
+
+#### Requisitos Previos:
+* [ ] Tener instalado MinGW64.
+* [ ] Haber agregado MinGW64 al **PATH** del sistema.
+
+#### Extensiones Necesarias:
+1.  **C/C++ Extension Pack** (Microsoft).
+2.  **Code Runner**.
+
+---
+
+### 🗄️ Paso 3: El SDK de MySQL (Sin Instalador)
+
+Para evitar instalaciones pesadas, usaremos el SDK directo.
+
+* **Acción:** Descarga el ZIP de **MySQL Connector/C 6.1.11** para Windows x64 desde los [MySQL Product Archives](https://downloads.mysql.com/archives/c-c/).
+* **Extracción:** Descomprímelo en una carpeta dedicada a SDKs.
+
+#### 📂 Estructura recomendada de carpetas:
+Para mantener el orden en tu disco de datos, usa este esquema:
+```text
+D:\Desarrollo
+├── \mingw64            (El compilador)
+├── \sdks
+│   └── \mysql-connector (Contiene las carpetas \include y \lib)
+└── \proyectos
+    └── \mi-tarea-mysql  (Tu código fuente .cpp)
+```
+
+> **⚠️ NOTA IMPORTANTE:** Para que el programa funcione al ejecutarlo, debes copiar el archivo `libmysql.dll` (que está en la carpeta `lib` del SDK) dentro de la carpeta donde esté tu archivo `.exe` final.
+
+---
+
+### 🔨 Configuración del Proyecto (.vscode)
+
+Dentro de la carpeta de tu proyecto, crea una carpeta llamada `.vscode` y configura los siguientes archivos:
+
+#### 1. `tasks.json` (Para compilar)
+Este archivo le dice a VS Code cómo invocar a `g++` e incluir las librerías de MySQL.
+
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe compilar con MySQL",
+            "command": "D:\\Desarrollo\\mingw64\\bin\\g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-I", "D:/Desarrollo/sdks/mysql-connector/include",
+                "-L", "D:/Desarrollo/sdks/mysql-connector/lib",
+                "-lmysql",
+                "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "Tarea para compilar proyectos con MySQL"
+        }
+    ]
+}
+```
+
+#### 2. `c_cpp_properties.json` (Para quitar el subrayado rojo)
+Para que IntelliSense reconozca los `#include <mysql.h>`, presiona `Ctrl + Shift + P` > **C/C++: Edit Configurations (UI)** y agrega la ruta en **Include path**. El archivo resultante debe verse así:
+
+```json
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:/Desarrollo/sdks/mysql-connector/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0",
+            "compilerPath": "D:/Desarrollo/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}
+```
+```
+
+### Consejos adicionales para tu GitHub:
+1.  **Imágenes:** Si tienes capturas de pantalla de las Variables de Entorno, puedes subirlas a una carpeta `/img` en tu repo y agregarlas con `![Descripción](img/pantallazo.png)`.
+2.  **Emojis:** He mantenido y añadido algunos para que sea más legible para los estudiantes de la UMG.
+3.  **Rutas:** He ajustado las rutas al estándar `D:\Desarrollo` que propusiste, para que sea consistente en toda la guía.
+
+¿Crees que con esto tus alumnos ya no se pierdan con el `libmysql.dll`? Ese suele ser el error #1.
 1. **Descarga o clona el repositorio:**
    ```bash
    git clone https://github.com/tu_usuario/eloquent-orm-cpp.git

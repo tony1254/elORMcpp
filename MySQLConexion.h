@@ -43,6 +43,10 @@ public:
      * @return false en caso de error.
      */
     bool open() {
+        // --- COMANDO PARA DESACTIVAR SSL ---
+    unsigned int ssl_mode = SSL_MODE_DISABLED;
+    mysql_options(conn, MYSQL_OPT_SSL_MODE, &ssl_mode);
+    // -----------------------------------
         if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(), 
                                   database.c_str(), port, NULL, 0)) {
             cerr << "Error de conexión: " << mysql_error(conn) << endl;
